@@ -1,10 +1,43 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
-import { StyleSheet, Text, View, Image, TouchableOpacity, Button } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, Text, View, Image, TouchableOpacity, Button, TextInput} from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export default function App() {
   const [estado, setEstado] = useState('leitura');
-  const [anotacao, setAnotacao] = useState('Um substantivo é uma classe gramatical que se refere a uma pessoa, lugar, coisa, animal, ideia ou qualquer entidade que possa ser nomeada. Ele desempenha o papel principal na estrutura das frases, pois é geralmente o sujeito ou o objeto direto das ações expressas pelos verbos.');
+  const [anotacao, setAnotacao] = useState('');
+
+  useEffect(() => {
+    // Quando inicializar o app queremos que leia a key "anotacao".
+    const loadAnotacao = async () => {
+      try {
+        const anotacaoLeitura = await AsyncStorage.getItem('anotacao');
+        setAnotacao(anotacaoLeitura);
+      } catch (erro) {
+        console.log(erro);
+      }
+    };
+
+    loadAnotacao();
+  }, []);
+
+  const setData = async () => {
+    try {
+      await AsyncStorage.setItem('anotacao', anotacao);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const atualizarText = () => {
+      setEstado('leitura')
+      setData();
+      alert('A sua anotação foi salva com sucesso.')
+  }
+
+
+
   return (
     <View style={styles.container}>
       <StatusBar hidden />
@@ -13,15 +46,30 @@ export default function App() {
       estado == 'leitura' ? (
         <View style={styles.content}>
             <Text style={styles.header}>Aplicativo de anotação</Text>
-
-          <View >
-            <Text style={styles.anotacao}>{anotacao}</Text>
-          </View>
-
+            {
+              anotacao != '' ? (
+                <View >
+              <Text style={styles.anotacao}>{anotacao}</Text>
+            </View>
+              ) :(
+                <View style={{padding: 20, paddingHorizontal: 80}}>
+                <Text style={{opacity: 0.3}}>Nenhuma anotação encontrada</Text>
+              </View>
+              )
+            }
+          
           <TouchableOpacity style={styles.btnAnotacao} 
             onPress={() => setEstado('atualizando')}>
-            <Text style={styles.btnAnotacaoTexto} 
-            >+</Text>
+              {anotacao == '' ? (
+                <Text style={styles.btnAnotacaoTexto} 
+                >+</Text>
+              ): (
+                <Text style={{fontSize: 12, color: 'white', textAlign: 'center', marginTop: 16}} 
+                >editar</Text>
+              )
+
+              }
+            
           </TouchableOpacity>
         </View>
       ) : estado == 'atualizando' ? (
@@ -29,10 +77,19 @@ export default function App() {
           
            <Text style={styles.header}>Aplicativo de anotação</Text>
            
+           <TextInput
+            value={anotacao}
+            multiline={true}
+            numberOfLines={5}
+            style={{ padding: 20, height: 300, textAlignVertical: 'top' }}
+            onChangeText={(text) => setAnotacao(text)}
+            placeholder='Clique aqui para escrever a sua anotação.'
+            autoFocus={true}
+            />
 
           <TouchableOpacity
            style={styles.btnSalvar}
-           onPress={() => setEstado('leitura')}>
+           onPress={() => atualizarText()}>
              <Text style={{textAlign: 'center', color: 'white',}}>
              Salvar
               </Text> 
